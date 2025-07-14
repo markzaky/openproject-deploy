@@ -25,7 +25,7 @@ x-op-app: &app
     # set to true to enable the email receiving feature. See ./docker/cron for more options
     IMAP_ENABLED: "${IMAP_ENABLED:-false}"
   volumes:
-    - "${OPDATA:-opdata}:/var/openproject/assets"
+    - "opdata:/var/openproject/assets"
 
 services:
   db:
@@ -33,7 +33,7 @@ services:
     <<: *restart_policy
     stop_grace_period: "3s"
     volumes:
-      - "${PGDATA:-pgdata}:/var/lib/postgresql/data"
+      - "pgdata:/var/lib/postgresql/data"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-p4ssw0rd}
       POSTGRES_DB: openproject
@@ -46,20 +46,6 @@ services:
     networks:
       - backend
 
-  proxy:
-    build:
-      context: ./proxy
-      args:
-        APP_HOST: web
-    image: openproject/proxy
-    <<: *restart_policy
-    ports:
-      - "${PORT:-8080}:80"
-    depends_on:
-      - web
-    networks:
-      - frontend
-
   web:
     <<: *app
     command: "./docker/prod/web"
@@ -71,6 +57,8 @@ services:
       - cache
       - seeder
     labels:
+    ports:
+      - '4010:8080'
       - autoheal=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default"]
