@@ -1,8 +1,6 @@
 networks:
   frontend:
   backend:
-  coolify:
-    external: true
 
 volumes:
   pgdata:
@@ -27,9 +25,21 @@ x-op-app: &app
     # set to true to enable the email receiving feature. See ./docker/cron for more options
     IMAP_ENABLED: "${IMAP_ENABLED:-false}"
   volumes:
-    - "opdata:/var/openproject/assets"
+    - "${OPDATA:-opdata}:/var/openproject/assets"
 
 services:
+  db:
+    image: postgres:13
+    <<: *restart_policy
+    stop_grace_period: "3s"
+    volumes:
+      - "${PGDATA:-pgdata}:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-p4ssw0rd}
+      POSTGRES_DB: openproject
+    networks:
+      - backend
+
   cache:
     image: memcached
     <<: *restart_policy
@@ -42,16 +52,22 @@ services:
     networks:
       - frontend
       - backend
-      - coolify
     depends_on:
+      - db
       - cache
       - seeder
-    ports:
-      - "${PORT}:8080"
     labels:
       - autoheal=true
+    ports:
+      - "${PORT}:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default",
+        ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -71,8 +87,8 @@ services:
     command: "./docker/prod/worker"
     networks:
       - backend
-      - coolify
     depends_on:
+      - db
       - cache
       - seeder
 
@@ -82,6 +98,7 @@ services:
     networks:
       - backend
     depends_on:
+      - db
       - cache
       - seeder
 
