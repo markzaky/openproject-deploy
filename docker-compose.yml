@@ -40,6 +40,7 @@ services:
     networks:
       - frontend
       - backend
+      - coolify
     depends_on:
       - cache
       - seeder
@@ -68,6 +69,7 @@ services:
     command: "./docker/prod/worker"
     networks:
       - backend
+      - coolify
     depends_on:
       - cache
       - seeder
