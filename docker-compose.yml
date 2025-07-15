@@ -59,7 +59,7 @@ services:
     labels:
       - autoheal=true
     ports:
-      - '4010:8080'
+      - '8080:8080'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default"]
       interval: 10s
